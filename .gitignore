@@ -1,0 +1,5 @@
+filestore/build/*
+/.gradle/
+/.idea/
+/.gradle
+/build

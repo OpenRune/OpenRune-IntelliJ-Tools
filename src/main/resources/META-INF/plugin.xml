@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<idea-plugin>
+    <id>dev.openrune</id>
+    <name>OpenRune</name>
+    <version>1.0.0</version>
+    <vendor email="runetools8@gmail.com" url="https://openrune.dev/">OpenRune</vendor>
+    <description><![CDATA[
+        OpenRune is a comprehensive suite of tools and utilities tailored for the Old School RuneScape (OSRS) community. It provides advanced functionalities for interacting with the OpenRune FileStore, making development and data analysis easier for OSRS-related projects.
+    ]]></description>
+
+    <change-notes><![CDATA[
+        - Initial release of OpenRune plugin
+        - Added support for FileStore interaction
+        - Integrated Config File Editor
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <category>Game Development</category>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileEditorProvider implementation="dev.openrune.config.ConfigFileEditorProvider"/>
+    </extensions>
+
+    <actions>
+        <group id="OpenRune.Tools" text="OpenRune Tools" description="Tools for OSRS FileStore">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>
