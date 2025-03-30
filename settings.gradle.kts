@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "OpenRune IntelliJ Tools "
+rootProject.name = "OpenRune IntelliJ Tools"
