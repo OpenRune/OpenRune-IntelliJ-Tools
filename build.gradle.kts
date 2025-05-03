@@ -40,7 +40,7 @@ intellij {
 
 tasks.withType<PatchPluginXmlTask> {
     untilBuild.set("")
-    changeNotes.set("""Rename files with same name on property rename.""")
+    changeNotes.set("""Add support for comments in RSCM files""")
 }
 
 // Language configuration

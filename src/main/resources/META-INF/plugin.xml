@@ -19,6 +19,10 @@
         <!-- Persistence -->
         <projectConfigurable instance="io.blurite.rscm.settings.RSCMProjectSettingsConfigurable" displayName="RSCM Settings"/>
 
+        <lang.commenter
+                language="RuneScape Config Mapping"
+                implementationClass="io.blurite.rscm.language.RSCMCommenter"/>
+
         <lang.documentationProvider
                 language="RuneScape Config Mapping"
                 implementationClass="io.blurite.rscm.language.quickdoc.RscmDocumentationProvider"/>
