@@ -7,6 +7,7 @@ import com.intellij.psi.*
 import com.intellij.util.ProcessingContext
 import io.blurite.rscm.language.annotator.RSCMAnnotator
 import io.blurite.rscm.language.psi.RSCMFile
+import io.blurite.rscm.language.psi.impl.RSCMPropertyImpl
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.toml.lang.psi.TomlKeySegment
 import org.toml.lang.psi.TomlLiteral
@@ -70,6 +71,24 @@ class RSCMReferenceContributor : PsiReferenceContributor() {
                 }
             },
         )
+        registrar.registerReferenceProvider(
+            PlatformPatterns.psiElement(RSCMPropertyImpl::class.java),
+            object : PsiReferenceProvider() {
+                override fun getReferencesByElement(
+                    element: PsiElement,
+                    ctx: ProcessingContext,
+                ): Array<PsiReference> {
+                    val project = element.project
+                    val value = element.text?.replace("\"", "") ?: return PsiReference.EMPTY_ARRAY
+                    val fileNameWithoutExtension = element.containingFile.virtualFile.nameWithoutExtension
+                    if (RSCMUtil.isReferentialMapping(project, fileNameWithoutExtension)) {
+                        val mappingReference = RSCMUtil.getMappingReference(project, fileNameWithoutExtension)
+                        return createReferenceInferredPrefix(mappingReference, value.substringBefore(":"), element)
+                    }
+                    return createReference(value, element)
+                }
+            },
+        )
     }
 
     fun createReference(
@@ -85,6 +104,37 @@ class RSCMReferenceContributor : PsiReferenceContributor() {
             PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return PsiReference.EMPTY_ARRAY
         if (prefix.length >= value.length) return PsiReference.EMPTY_ARRAY
         val property = TextRange(prefix.length + RSCMAnnotator.RSCM_SEPARATOR_STR.length + 1, value.length + 1)
-        return arrayOf(RSCMReference(rscmFile, element, property))
+
+        var references: Array<PsiReference> = arrayOf(RSCMReference(rscmFile, element, property))
+        if (RSCMUtil.isReferentialMapping(project, prefix)) {
+            val mappingReference = RSCMUtil.getMappingReference(project, prefix)
+            val startOffset = "$prefix.".length + 1
+            val interfaceKeyRef = value.substringAfter(RSCMAnnotator.RSCM_SEPARATOR_STR).substringBefore(":")
+            val textRange = TextRange(startOffset, startOffset + interfaceKeyRef.length)
+            references +=
+                createReferenceInferredPrefix(
+                    mappingReference,
+                    interfaceKeyRef,
+                    element,
+                    textRange,
+                )
+        }
+        return references
+    }
+
+    fun createReferenceInferredPrefix(
+        prefix: String,
+        value: String,
+        element: PsiElement,
+        textRange: TextRange = TextRange(0, value.length),
+    ): Array<PsiReference> {
+        val project = element.project
+        if (!RSCMUtil.isValidPrefix(project, prefix)) return PsiReference.EMPTY_ARRAY
+        val path = RSCMUtil.constructPath(project, prefix)
+        val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return PsiReference.EMPTY_ARRAY
+        val rscmFile =
+            PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return PsiReference.EMPTY_ARRAY
+        if (value.isEmpty()) return PsiReference.EMPTY_ARRAY
+        return arrayOf(RSCMReference(rscmFile, element, textRange))
     }
 }

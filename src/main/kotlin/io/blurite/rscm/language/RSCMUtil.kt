@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.util.PsiTreeUtil
 import io.blurite.rscm.language.psi.RSCMFile
 import io.blurite.rscm.language.psi.RSCMProperty
+import io.blurite.rscm.language.util.toMap
 import io.blurite.rscm.settings.RSCMProjectSettings
 import java.nio.file.Path
 import java.util.*
@@ -62,5 +63,21 @@ object RSCMUtil {
         val settings = RSCMProjectSettings.getInstance(project)
         val mappingDirectory = settings.mappingsPath
         return Path.of(mappingDirectory, "$prefix.${RSCMFileType.INSTANCE.defaultExtension}")
+    }
+
+    fun isReferentialMapping(
+        project: Project,
+        prefix: String,
+    ): Boolean {
+        val settings = RSCMProjectSettings.getInstance(project)
+        return prefix in settings.referentialMappings.toMap()
+    }
+
+    fun getMappingReference(
+        project: Project,
+        prefix: String,
+    ): String {
+        val settings = RSCMProjectSettings.getInstance(project)
+        return settings.referentialMappings.toMap()[prefix]!!
     }
 }

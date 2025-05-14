@@ -28,7 +28,7 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
         val scope = GlobalSearchScope.allScope(project)
         val prefix = element.containingFile.virtualFile.nameWithoutExtension
         val directory = getDirectory(element) ?: return basic
-        val oldKey = element.text.substringBefore(":")
+        val oldKey = element.text.substringBefore("=")
         val files = FilenameIndex.getVirtualFilesByName("$oldKey.toml", scope)
         val fileReferences =
             files

@@ -20,3 +20,14 @@ fun String.remove(oldValue: String) = replace(oldValue, "")
 operator fun String.minus(oldValue: String) = replace(oldValue, "")
 
 operator fun String.minus(oldValue: Char) = replace(oldValue.toString(), "")
+
+fun String.toMap(
+    pairDelimiter: String = ",",
+    keyValueDelimiter: String = "=",
+): Map<String, String> =
+    this
+        .split(pairDelimiter)
+        .mapNotNull { entry ->
+            val parts = entry.trim().split(keyValueDelimiter, limit = 2)
+            if (parts.size == 2) parts[0] to parts[1] else null
+        }.toMap()

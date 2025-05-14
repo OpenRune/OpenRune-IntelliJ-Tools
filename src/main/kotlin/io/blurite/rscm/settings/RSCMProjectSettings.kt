@@ -28,6 +28,12 @@ class RSCMProjectSettings(
             state.mappingsPath = value
         }
 
+    var referentialMappings: String
+        get() = state.referentialMappings
+        set(value) {
+            state.referentialMappings = value
+        }
+
     companion object {
         fun getInstance(project: Project): RSCMProjectSettings = project.getService(RSCMProjectSettings::class.java)
     }

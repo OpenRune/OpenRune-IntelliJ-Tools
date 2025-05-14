@@ -2,6 +2,8 @@ package io.blurite.rscm.language.psi
 
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
+import com.intellij.psi.PsiReference
+import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry
 import com.intellij.psi.search.GlobalSearchScope
 
 /**
@@ -13,4 +15,6 @@ abstract class RSCMNamedElementImpl(
 ) : ASTWrapperPsiElement(node),
     RSCMNamedElement {
     override fun getUseScope() = GlobalSearchScope.allScope(project)
+
+    override fun getReferences(): Array<PsiReference> = ReferenceProvidersRegistry.getReferencesFromProviders(this)
 }
