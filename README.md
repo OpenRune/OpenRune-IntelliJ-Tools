@@ -4,8 +4,8 @@
 
 Create a directory in your project in which to store your mappings. Mapping files consist of the following format:
 ```
-abyssal_whip:4151
-abyssal_whip_note:4152
+abyssal_whip=4151
+abyssal_whip_note=4152
 ```
 Where `abyssal_whip` is the string representation of the id `4151`.
 The name of the mapping file corresponds to the mapping 'type', e.g. `item.rscm` corresponds to `item.abyssal_whip`.
