@@ -1,11 +1,14 @@
-import org.jetbrains.intellij.tasks.PatchPluginXmlTask
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm") version "2.2.0"
     java
     idea
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("org.jetbrains.intellij.platform") version "2.7.1"
 }
 
 group = "io.blurite"
@@ -15,10 +18,21 @@ repositories {
     maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
     gradlePluginPortal()
     mavenCentral()
+
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    intellijPlatform {
+        intellijIdeaCommunity("2025.2")
+
+        bundledPlugin("org.jetbrains.kotlin")
+        bundledPlugin("com.intellij.java")
+        bundledPlugin("org.toml.lang")
+    }
 }
 
 // Add generated language classes source set
@@ -30,30 +44,39 @@ sourceSets {
     }
 }
 
-// Intellij/Plugin configuration
-intellij {
-    version.set("2023.1")
-    plugins.set(listOf("java", "Kotlin", "org.toml.lang"))
-    pluginName.set("RSCM")
-    updateSinceUntilBuild.set(true)
-}
-
-tasks.withType<PatchPluginXmlTask> {
-    untilBuild.set("")
-    changeNotes.set("""Add support for comments in RSCM files""")
-}
-
-// Language configuration
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+intellijPlatform {
+    pluginConfiguration {
+        name = "RSCM"
+        version = "2025.2"
+        changeNotes.set("Add support for comments in RSCM files")
+    }
+
+    pluginVerification {
+        ides {
+            create("IC", "2025.2")
+        }
+
+        failureLevel.set(
+            setOf(
+                // These will make the task fail on common K2-incompatible patterns
+                FailureLevel.COMPATIBILITY_PROBLEMS,
+                FailureLevel.MISSING_DEPENDENCIES,
+                FailureLevel.INTERNAL_API_USAGES,
+                FailureLevel.DEPRECATED_API_USAGES
+            )
+        )
+    }
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-        apiVersion = "1.8"
-        languageVersion = "1.8"
-        freeCompilerArgs = listOf("-Xinline-classes")
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+        languageVersion.set(KotlinVersion.KOTLIN_2_2)
     }
 }

@@ -1,5 +1,6 @@
 package io.blurite.rscm.language.completion
 
+import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLiteralExpression
@@ -11,9 +12,10 @@ import io.blurite.rscm.language.util.minus
  */
 class RSCMJavaCompletionConfidence : RSCMCompletionConfidence() {
     override fun shouldSkipAutopopup(
+        editor: Editor,
         element: PsiElement,
         psiFile: PsiFile,
-        offset: Int,
+        offset: Int
     ): ThreeState {
         if (element.parent !is PsiLiteralExpression) return ThreeState.UNSURE
         val value = element.parent.text - '"'
