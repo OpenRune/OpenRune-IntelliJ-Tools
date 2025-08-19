@@ -12,6 +12,19 @@ The name of the mapping file corresponds to the mapping 'type', e.g. `item.rscm`
 
 In IntelliJ settings search 'RSCM' and set the mappings directory to the folder you created.
 
+Furthermore, it is possible to do child-references, such as:
+```
+# in interface.rscm
+bank=12
+
+# in component.rscm
+bank:universe=0
+```
+
+In this example, one is able to refactor `bank` reference in interface.rscm and have it echo through to
+the child reference in component.rscm. These child mappings must be defined in RSCM Settings tab, in IntelliJ Idea.
+For the above example, the declaration would be `component=interface`.
+
 ## Features
 
 - Highlighting of mapped strings
