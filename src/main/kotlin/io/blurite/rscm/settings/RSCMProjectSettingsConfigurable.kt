@@ -43,10 +43,10 @@ class RSCMProjectSettingsConfigurable(
 
         // Add action listener to open the file chooser dialog when the button is clicked
         directoryTextField?.addBrowseFolderListener(
-            "Select Directory",
-            "Choose the RSCM mappings directory",
             project,
-            fileChooserDescriptor,
+            fileChooserDescriptor
+                .withTitle("Select Directory")
+                .withDescription("Choose the RSCM mappings directory")
         )
 
         // Add the text field with the browse button to the panel
