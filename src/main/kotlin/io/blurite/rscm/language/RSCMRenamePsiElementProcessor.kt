@@ -27,15 +27,31 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
         val project = element.project
         val scope = GlobalSearchScope.allScope(project)
         val prefix = element.containingFile?.virtualFile?.nameWithoutExtension ?: return basic
-        val directory = getDirectory(element) ?: return basic
+        val directoryInfo = getDirectory(element) ?: return basic
+        val directory: String
+        val suffix: String
+        if (directoryInfo.contains('|')) {
+            directory = directoryInfo.substringBefore('|')
+            suffix = directoryInfo.substringAfter('|')
+        } else {
+            directory = directoryInfo
+            suffix = "toml"
+        }
+        val isToml = suffix == "toml"
         val oldKey = element.text.substringBefore("=")
-        val files = FilenameIndex.getVirtualFilesByName("$oldKey.toml", scope)
+        val files = FilenameIndex.getVirtualFilesByName("$oldKey.$suffix", scope)
         val fileReferences =
             files
                 // E.g If prefix is item we only want to rename the files in `items` dir
                 .filter { it.path.contains("/$directory/") }
                 .mapNotNull { it.toPsiFile(project) }
-                .mapNotNull { createReference(prefix, oldKey, it) }
+                .mapNotNull {
+                    if (isToml) {
+                        createReference(prefix, oldKey, it)
+                    } else {
+                        createBinaryReference(prefix, oldKey, it)
+                    }
+                }
         basic.addAll(fileReferences)
         return basic
     }
@@ -70,5 +86,20 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
             PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return null
         val property = TextRange(0, 0)
         return RSCMReference(rscmFile, element, property)
+    }
+
+    private fun createBinaryReference(
+        prefix: String,
+        key: String,
+        element: PsiFile,
+    ): PsiReference? {
+        val project = element.project
+        if (!RSCMUtil.isValidPrefix(project, prefix)) return null
+        val path = RSCMUtil.constructPath(project, prefix)
+        val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return null
+        val rscmFile =
+            PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return null
+        val property = TextRange(0, 0)
+        return BinaryFileReference(rscmFile, element, property)
     }
 }
