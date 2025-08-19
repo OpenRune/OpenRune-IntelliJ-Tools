@@ -3,6 +3,7 @@
     <name>RSCM</name>
     <vendor email="chris@blurite.io" url="https://www.blurite.io">Blurite</vendor>
 
+
     <description><![CDATA[
         Compile time verification on config identifiers as well as auto suggestions.
         ]]></description>
@@ -63,6 +64,10 @@
         <completion.confidence language="JAVA"
                                implementationClass="io.blurite.rscm.language.completion.RSCMJavaCompletionConfidence"
                                order="before javaSkipAutopopupInStrings"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
 
     <actions>
