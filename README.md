@@ -25,6 +25,21 @@ In this example, one is able to refactor `bank` reference in interface.rscm and 
 the child reference in component.rscm. These child mappings must be defined in RSCM Settings tab, in IntelliJ Idea.
 For the above example, the declaration would be `component=interface`.
 
+It is also possible to associate RSCM elements with files in directories. This system requires that
+all the files be in a root folder specific to that element. As an example, `data/items/*` where all the files
+are `rscm_name.toml`.
+In order to set up file references, you need to create a file called `directory.conf` in the same folder
+where all the .rscm files are.
+The file shall have `type=folder` declarations. For example, `item=items` to link any `item` reference to files in
+`items` folder.
+
+Other file extensions beyond .toml are also supported for referential renaming. These require defining the extension
+in the `directory.conf` file with the pipe operator.
+As an example, a valid declaration is `jingle=jingles|dat`.
+This means that when renaming a jingle property (e.g. `jingle.advance_agility`), it will look for a file called
+`advance_agility.dat` in the `jingles` folder, and rename it accordingly if one was found. If no suffix is defined,
+`toml` files will be searched.
+
 ## Features
 
 - Highlighting of mapped strings
