@@ -26,7 +26,7 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
         val basic = super.findReferences(element, searchScope, searchInCommentsAndStrings)
         val project = element.project
         val scope = GlobalSearchScope.allScope(project)
-        val prefix = element.containingFile.virtualFile.nameWithoutExtension
+        val prefix = element.containingFile?.virtualFile?.nameWithoutExtension ?: return basic
         val directory = getDirectory(element) ?: return basic
         val oldKey = element.text.substringBefore("=")
         val files = FilenameIndex.getVirtualFilesByName("$oldKey.toml", scope)
@@ -52,9 +52,9 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
                 .text
                 .lines()
         return lines
-            .first { it.contains(prefix) }
-            .substringAfter("=")
-            .trim()
+            .firstOrNull { it.contains(prefix) }
+            ?.substringAfter("=")
+            ?.trim()
     }
 
     private fun createReference(
