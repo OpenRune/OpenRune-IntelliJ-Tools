@@ -1,6 +1,7 @@
 package io.blurite.rscm.language
 
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
@@ -80,7 +81,10 @@ class RSCMReferenceContributor : PsiReferenceContributor() {
                 ): Array<PsiReference> {
                     val project = element.project
                     val value = element.text?.replace("\"", "") ?: return PsiReference.EMPTY_ARRAY
-                    val fileNameWithoutExtension = element.containingFile.virtualFile.nameWithoutExtension
+                    val psiFile = element.containingFile
+                    val vFile = psiFile.virtualFile ?: psiFile.originalFile.virtualFile
+                    val fileNameWithoutExtension =
+                        vFile?.nameWithoutExtension ?: FileUtilRt.getNameWithoutExtension(psiFile.name)
                     if (RSCMUtil.isReferentialMapping(project, fileNameWithoutExtension)) {
                         val mappingReference = RSCMUtil.getMappingReference(project, fileNameWithoutExtension)
                         return createReferenceInferredPrefix(mappingReference, value.substringBefore(":"), element)
