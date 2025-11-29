@@ -1,1 +1,1 @@
-rootProject.name = "rscm-plugin"
+rootProject.name = "OpenRune IntelliJ Tools"

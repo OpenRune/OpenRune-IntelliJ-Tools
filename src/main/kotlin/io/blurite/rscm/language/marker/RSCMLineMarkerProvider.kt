@@ -3,13 +3,11 @@ package io.blurite.rscm.language.marker
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerInfo
 import com.intellij.codeInsight.daemon.RelatedItemLineMarkerProvider
 import com.intellij.codeInsight.navigation.NavigationGutterIconBuilder
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiManager
+import dev.openrune.language.AlterConstantProvider
 import io.blurite.rscm.language.RSCMIcons
 import io.blurite.rscm.language.RSCMUtil
 import io.blurite.rscm.language.annotator.RSCMAnnotator
-import io.blurite.rscm.language.psi.RSCMFile
 
 /**
  * @author Chris
@@ -25,18 +23,62 @@ abstract class RSCMLineMarkerProvider : RelatedItemLineMarkerProvider() {
         val prefix = value.substringAfter("\"").substringBefore(RSCMAnnotator.RSCM_SEPARATOR_STR)
         val project = element.project
         if (!RSCMUtil.isValidPrefix(project, prefix)) return
-        val path = RSCMUtil.constructPath(project, prefix)
-        val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return
-        val rscmFile = PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return
+        
+        // Get or create RSCM file (handles both file-based and map-only prefixes)
+        val rscmFile = RSCMUtil.getOrCreateRSCMFile(project, prefix) ?: return
+        
         val possibleProperties = value.substring(prefix.length + RSCMAnnotator.RSCM_SEPARATOR_STR.length)
-        val properties = RSCMUtil.findProperties(rscmFile, possibleProperties)
+        
+        // Get properties from providers (includes both file and map)
+        val properties = RSCMUtil.findPropertiesFromProviders(rscmFile, possibleProperties)
+        
         if (properties.isEmpty()) return
+        
+        // Check if any properties are from Alter constant provider (temp_ files)
+        val hasAlterConstantProperties = properties.any { prop ->
+            val fileName = prop.containingFile.name
+            fileName.startsWith("temp_") && fileName.endsWith(".rscm")
+        }
+        
+        // Determine icon and tooltip based on source
+        val icon: javax.swing.Icon
+        val tooltip: String
+        
+        if (hasAlterConstantProperties) {
+            // Check if any Alter constant properties are from TOML files
+            val alterProvider = AlterConstantProvider.getInstance(project)
+            val hasTomlProperties = properties.any { prop ->
+                val fileName = prop.containingFile.name
+                if (fileName.startsWith("temp_") && fileName.endsWith(".rscm")) {
+                    val propPrefix = fileName.removePrefix("temp_").removeSuffix(".rscm")
+                    val propKey = prop.key
+                    alterProvider.getTomlSourceFile(propPrefix, propKey) != null
+                } else {
+                    false
+                }
+            }
+            
+            if (hasTomlProperties) {
+                // TOML file - use file icon, navigate to file
+                icon = RSCMIcons.FILE
+                tooltip = "Navigate to TOML file"
+            } else {
+                // .dat file - use view icon, show dialog
+                icon = RSCMIcons.MAP
+                tooltip = "View Alter constant provider properties (not a file)"
+            }
+        } else {
+            // Regular .rscm file
+            icon = RSCMIcons.FILE
+            tooltip = "Navigate to RSCM language property"
+        }
+        
         // Add the property to a collection of line marker info
         val builder =
             NavigationGutterIconBuilder
-                .create(RSCMIcons.FILE)
+                .create(icon)
                 .setTargets(properties)
-                .setTooltipText("Navigate to RSCM language property")
+                .setTooltipText(tooltip)
         result.add(builder.createLineMarkerInfo(element))
     }
 }

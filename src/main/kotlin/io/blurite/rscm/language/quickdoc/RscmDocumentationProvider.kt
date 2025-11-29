@@ -36,7 +36,13 @@ class RscmDocumentationProvider : AbstractDocumentationProvider() {
             val key: String = element.key ?: return null
             val value: String = element.value ?: return null
             val docComment = findDocumentationComment(element)
-            return renderFullDoc(key, value, docComment, element.containingFile.virtualFile)
+            val virtualFile = element.containingFile.virtualFile
+            if (virtualFile != null) {
+                return renderFullDoc(key, value, docComment, virtualFile)
+            } else {
+                // Fallback for properties without virtual file (shouldn't happen with new implementation)
+                return renderFullDocWithoutFile(key, value, docComment)
+            }
         }
         return null
     }
@@ -52,6 +58,21 @@ class RscmDocumentationProvider : AbstractDocumentationProvider() {
         addKeyValueSection("Key:", key, sb)
         addKeyValueSection("Value:", value, sb)
         addKeyValueSection("File:", "<a href=\"${file.url}\">${file.name}</a>", sb)
+        docComment?.let { addKeyValueSection("Comment:", docComment, sb) }
+        sb.append(DocumentationMarkup.SECTIONS_END)
+        return sb.toString()
+    }
+    
+    private fun renderFullDocWithoutFile(
+        key: String,
+        value: String,
+        docComment: String?,
+    ): String {
+        val sb = StringBuilder()
+        sb.append(DocumentationMarkup.SECTIONS_START)
+        addKeyValueSection("Key:", key, sb)
+        addKeyValueSection("Value:", value, sb)
+        addKeyValueSection("Source:", "Alter Constant Provider", sb)
         docComment?.let { addKeyValueSection("Comment:", docComment, sb) }
         sb.append(DocumentationMarkup.SECTIONS_END)
         return sb.toString()

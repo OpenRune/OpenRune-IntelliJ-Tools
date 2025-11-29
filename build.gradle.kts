@@ -52,14 +52,16 @@ java {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "RSCM"
+        name = "OpenRune"
         version = "2025.2"
         changeNotes.set("Add support for comments in RSCM files")
     }
 
     pluginVerification {
         ides {
-            create("IC", "2025.2")
+            // Test against minimum version to ensure compatibility
+            create("IC", "2024.2")  // Minimum version (Kotlin 2.2 support)
+            create("IC", "2025.2")  // Current target version
         }
 
         failureLevel.set(

@@ -35,9 +35,9 @@ abstract class RSCMAnnotator : Annotator {
         val prefix = value.substringAfter("\"").substringBefore(RSCM_SEPARATOR_STR)
         val project = element.project
         if (!RSCMUtil.isValidPrefix(project, prefix)) return
-        val path = RSCMUtil.constructPath(project, prefix)
-        val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return
-        val rscmFile = PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return
+        
+        // Get or create RSCM file (handles both file-based and map-only prefixes)
+        val rscmFile = RSCMUtil.getOrCreateRSCMFile(project, prefix) ?: return
 
         // Define the text ranges (start is inclusive, end is exclusive)
         // "prefix:key"
@@ -61,7 +61,8 @@ abstract class RSCMAnnotator : Annotator {
 
         // Highlight key
         val key = value.substringAfter(RSCM_SEPARATOR_STR).substringBefore("\"")
-        val properties = RSCMUtil.findProperties(rscmFile, key)
+        // Use provider system to check all sources (files and maps)
+        val properties = RSCMUtil.findPropertiesFromProviders(rscmFile, key)
         if (properties.isEmpty()) {
             if (key.isEmpty() || key.contains("$")) {
                 return

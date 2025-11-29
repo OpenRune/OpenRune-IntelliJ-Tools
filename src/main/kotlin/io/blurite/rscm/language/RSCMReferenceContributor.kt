@@ -100,12 +100,34 @@ class RSCMReferenceContributor : PsiReferenceContributor() {
         element: PsiElement,
     ): Array<PsiReference> {
         val project = element.project
+        
+        // Check if this is a direct file reference (e.g., "items.dat", "gamevals.toml", "items.rscm")
+        if (value.endsWith(".rscm") || value.endsWith(".dat") || value.endsWith(".toml")) {
+            // Validate that value looks like a valid filename (not an error message)
+            if (value.isNotEmpty() && 
+                value.length <= 255 && 
+                !value.contains(":") && 
+                !value.contains("\n") && 
+                !value.contains("\r") &&
+                !value.contains("Expected") &&
+                !value.contains("/") &&
+                !value.contains("\\")) {
+                val filePath = RSCMUtil.findFileInMappingsDirectories(project, value)
+                if (filePath != null) {
+                    val textRange = TextRange(0, value.length)
+                    return arrayOf(RSCMFileReference(filePath, element, textRange))
+                }
+            }
+            // If file not found or invalid, fall through to property reference logic
+        }
+        
+        // Original property reference logic
         val prefix = value.substringBefore(RSCMAnnotator.RSCM_SEPARATOR_STR)
         if (!RSCMUtil.isValidPrefix(project, prefix)) return PsiReference.EMPTY_ARRAY
-        val path = RSCMUtil.constructPath(project, prefix)
-        val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return PsiReference.EMPTY_ARRAY
-        val rscmFile =
-            PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return PsiReference.EMPTY_ARRAY
+        
+        // Get or create RSCM file (handles both file-based and map-only prefixes)
+        val rscmFile = RSCMUtil.getOrCreateRSCMFile(project, prefix) ?: return PsiReference.EMPTY_ARRAY
+        
         if (prefix.length >= value.length) return PsiReference.EMPTY_ARRAY
         val property = TextRange(prefix.length + RSCMAnnotator.RSCM_SEPARATOR_STR.length + 1, value.length + 1)
 
@@ -134,7 +156,7 @@ class RSCMReferenceContributor : PsiReferenceContributor() {
     ): Array<PsiReference> {
         val project = element.project
         if (!RSCMUtil.isValidPrefix(project, prefix)) return PsiReference.EMPTY_ARRAY
-        val path = RSCMUtil.constructPath(project, prefix)
+        val path = RSCMUtil.constructPath(project, prefix) ?: return PsiReference.EMPTY_ARRAY
         val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return PsiReference.EMPTY_ARRAY
         val rscmFile =
             PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return PsiReference.EMPTY_ARRAY

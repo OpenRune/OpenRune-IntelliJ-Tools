@@ -80,7 +80,7 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
     ): PsiReference? {
         val project = element.project
         if (!RSCMUtil.isValidPrefix(project, prefix)) return null
-        val path = RSCMUtil.constructPath(project, prefix)
+        val path = RSCMUtil.constructPath(project, prefix) ?: return null
         val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return null
         val rscmFile =
             PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return null
@@ -95,7 +95,7 @@ class RSCMRenamePsiElementProcessor : RenamePsiElementProcessor() {
     ): PsiReference? {
         val project = element.project
         if (!RSCMUtil.isValidPrefix(project, prefix)) return null
-        val path = RSCMUtil.constructPath(project, prefix)
+        val path = RSCMUtil.constructPath(project, prefix) ?: return null
         val vf = VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path) ?: return null
         val rscmFile =
             PsiManager.getInstance(element.project).findFile(vf) as? RSCMFile ?: return null

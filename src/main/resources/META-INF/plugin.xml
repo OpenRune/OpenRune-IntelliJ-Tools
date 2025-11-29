@@ -1,25 +1,27 @@
 <idea-plugin>
-    <id>rscm</id>
-    <name>RSCM</name>
-    <vendor email="chris@blurite.io" url="https://www.blurite.io">Blurite</vendor>
-
-
+    <id>dev.openrune</id>
+    <name>OpenRune</name>
+    <version>1.0.0</version>
+    <vendor email="runetools8@gmail.com" url="https://openrune.dev/">OpenRune</vendor>
     <description><![CDATA[
-        Compile time verification on config identifiers as well as auto suggestions.
-        ]]></description>
+        OpenRune is a comprehensive suite of tools and utilities tailored for the Old School RuneScape (OSRS) community. It provides advanced functionalities for interacting with the OpenRune FileStore, making development and data analysis easier for OSRS-related projects.
+    ]]></description>
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
+    <!-- Minimum version: 2024.2 (242) for Kotlin 2.2 support -->
+    <idea-version since-build="242" />
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
     <depends>com.intellij.modules.lang</depends>
     <depends optional="true" config-file="rscm-withKotlin.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="rscm-withTOML.xml">org.toml.lang</depends>
+    <category>Game Development</category>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Persistence -->
         <projectConfigurable instance="io.blurite.rscm.settings.RSCMProjectSettingsConfigurable"
-                             displayName="RSCM Settings"/>
+                             displayName="OpenRune Settings"/>
         <lang.elementManipulator forClass="io.blurite.rscm.language.psi.RSCMProperty"
                                  implementationClass="io.blurite.rscm.language.RSCMPropertyManipulator"/>
 
@@ -54,6 +56,7 @@
         <lookup.charFilter implementation="io.blurite.rscm.language.completion.RSCMCompletionCharFilter"
                            order="first"/>
         <psi.referenceContributor implementation="io.blurite.rscm.language.RSCMReferenceContributor"/>
+        <codeInsight.gotoDeclarationHandler implementation="dev.openrune.language.AlterConstantGotoDeclarationHandler"/>
 
         <!-- Java -->
         <annotator language="JAVA" implementationClass="io.blurite.rscm.language.annotator.RSCMJavaAnnotator"/>
