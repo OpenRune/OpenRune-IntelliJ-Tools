@@ -35,6 +35,10 @@ class AlterConstantProvider(private val project: Project) : RSCMProvider {
     // Format: "prefix:key" -> TOML file path
     private val tomlSourceFilesRef = AtomicReference<Map<String, String>>(loadTomlSourceFiles())
     
+    // Track which keys come from .dat files (for navigation)
+    // Format: "prefix:key" -> Pair(dat file path, table name)
+    private val datSourceFilesRef = AtomicReference<Map<String, Pair<String, String>>>(loadDatSourceFiles())
+    
     // Cache PSI properties per prefix to avoid recreating them
     // Format: prefix -> List<RSCMProperty>
     private val cachedProperties = mutableMapOf<String, List<RSCMProperty>>()
@@ -52,6 +56,9 @@ class AlterConstantProvider(private val project: Project) : RSCMProvider {
     
     private val tomlSourceFiles: Map<String, String>
         get() = tomlSourceFilesRef.get()
+    
+    private val datSourceFiles: Map<String, Pair<String, String>>
+        get() = datSourceFilesRef.get()
     
     init {
         // Pre-cache properties for all prefixes to avoid lazy creation during typing/autocomplete
@@ -121,10 +128,12 @@ class AlterConstantProvider(private val project: Project) : RSCMProvider {
             // Load new data (file I/O, safe on background thread)
             val newData = loadAllFiles()
             val newTomlSources = loadTomlSourceFiles()
+            val newDatSources = loadDatSourceFiles()
             
             // Update references atomically
             datDataRef.set(newData)
             tomlSourceFilesRef.set(newTomlSources)
+            datSourceFilesRef.set(newDatSources)
             
             // Clear cached PSI properties - they'll be recreated on next access
             synchronized(cachedProperties) {
@@ -278,6 +287,60 @@ class AlterConstantProvider(private val project: Project) : RSCMProvider {
     }
     
     /**
+     * Track which keys come from .dat files and which table they're in.
+     * Format: "prefix:key" -> Pair(dat file path, table name)
+     */
+    private fun loadDatSourceFiles(): Map<String, Pair<String, String>> {
+        val directories = mappingsDirectories
+        if (directories.isEmpty()) return emptyMap()
+        
+        val datSources = mutableMapOf<String, Pair<String, String>>()
+        
+        // Search all directories
+        for (mappingDirectory in directories) {
+            val dir = Path.of(mappingDirectory).toFile()
+            if (!dir.exists() || !dir.isDirectory) continue
+            
+            dir.listFiles { it.isFile && it.extension == "dat" }?.forEach { datFile ->
+                try {
+                    val filePath = datFile.absolutePath
+                    DataInputStream(FileInputStream(datFile)).use { input ->
+                        val tableCount = input.readInt()
+                        
+                        repeat(tableCount) {
+                            val nameLength = input.readShort().toInt()
+                            val nameBytes = ByteArray(nameLength)
+                            input.readFully(nameBytes)
+                            val tableName = String(nameBytes, Charsets.UTF_8)
+                            
+                            val itemCount = input.readInt()
+                            repeat(itemCount) {
+                                val itemLength = input.readShort().toInt()
+                                val itemBytes = ByteArray(itemLength)
+                                input.readFully(itemBytes)
+                                val itemString = String(itemBytes, Charsets.UTF_8)
+                                
+                                // Find the key (part before =)
+                                val equalsIndex = itemString.indexOf('=')
+                                if (equalsIndex > 0) {
+                                    val key = itemString.substring(0, equalsIndex)
+                                    // Track "prefix:key" -> (dat file path, table name)
+                                    datSources["$tableName:$key"] = Pair(filePath, tableName)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Log but continue processing other files
+                    e.printStackTrace()
+                }
+            }
+        }
+        
+        return datSources
+    }
+    
+    /**
      * Find all gamevals.toml files recursively in a directory.
      */
     private fun findGameValsTomlFiles(directory: File): List<File> {
@@ -399,6 +462,20 @@ class AlterConstantProvider(private val project: Project) : RSCMProvider {
         }
         // Fallback: check if any key from this prefix comes from a TOML file
         return tomlSourceFiles.entries.firstOrNull { it.key.startsWith("$prefix:") }?.value
+    }
+    
+    /**
+     * Get the .dat source file path and table name for a specific key in a prefix, if it comes from a .dat file.
+     * Returns null if the key comes from a TOML file.
+     */
+    fun getDatSourceFile(prefix: String, key: String? = null): Pair<String, String>? {
+        if (key != null) {
+            // Look up specific key: "prefix:key"
+            val keyPath = "$prefix:$key"
+            return datSourceFiles[keyPath]
+        }
+        // Fallback: check if any key from this prefix comes from a .dat file
+        return datSourceFiles.entries.firstOrNull { it.key.startsWith("$prefix:") }?.value
     }
     
     companion object {

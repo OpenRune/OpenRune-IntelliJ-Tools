@@ -39,10 +39,13 @@ class RSCMReference(
                 val alterData = alterProvider.getHardcodedDataForPrefix(prefix)
                 
                 if (alterData != null) {
-                    // Check if this specific key comes from a TOML file
+                    // Check if this specific key comes from a TOML file or .dat file
                     val propertyKey = property.key
                     val tomlSourceFile = alterProvider.getTomlSourceFile(prefix, propertyKey)
-                    results.add(AlterConstantResolveResult(property, prefix, alterData, tomlSourceFile))
+                    val datSourceInfo = alterProvider.getDatSourceFile(prefix, propertyKey)
+                    val datSourceFile = datSourceInfo?.first
+                    val datTableName = datSourceInfo?.second
+                    results.add(AlterConstantResolveResult(property, prefix, alterData, tomlSourceFile, datSourceFile, datTableName))
                     continue
                 }
             }

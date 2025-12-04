@@ -56,7 +56,9 @@
         <lookup.charFilter implementation="io.blurite.rscm.language.completion.RSCMCompletionCharFilter"
                            order="first"/>
         <psi.referenceContributor implementation="io.blurite.rscm.language.RSCMReferenceContributor"/>
-        <codeInsight.gotoDeclarationHandler implementation="dev.openrune.language.AlterConstantGotoDeclarationHandler"/>
+
+        <!-- Custom .dat file editor -->
+        <fileEditorProvider implementation="io.blurite.rscm.language.DatFileEditorProvider"/>
 
         <!-- Java -->
         <annotator language="JAVA" implementationClass="io.blurite.rscm.language.annotator.RSCMJavaAnnotator"/>
